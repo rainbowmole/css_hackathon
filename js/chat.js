@@ -109,6 +109,52 @@ function appendScheduleCard(freelancer, summaryText) {
   msgs.scrollTop = msgs.scrollHeight;
 }
 
+function extractHourlyRate(rateText) {
+  const match = String(rateText || '').match(/(\d+(?:\.\d+)?)/);
+  return match ? Number(match[1]) : null;
+}
+
+function getFreelancerInfoReply(text, freelancer) {
+  const lower = text.toLowerCase();
+  const hourlyRate = extractHourlyRate(freelancer.rate);
+  const dailyRate = hourlyRate ? hourlyRate * 8 : null;
+
+  if (/(daily rate|per day|day rate)/.test(lower)) {
+    if (dailyRate) {
+      return `${freelancer.name}'s estimated day rate is about $${dailyRate}/day (based on ${freelancer.rate}).`;
+    }
+    return `${freelancer.name}'s listed rate is ${freelancer.rate}.`;
+  }
+
+  if (/(hourly rate|rate|cost|price|pricing)/.test(lower)) {
+    return `${freelancer.name}'s standard rate is ${freelancer.rate}, and typical projects start around $${freelancer.minBudget}.`;
+  }
+
+  if (/(available|availability|booked|free this week|free now)/.test(lower)) {
+    return freelancer.avail
+      ? `${freelancer.name} is currently available for new work.`
+      : `${freelancer.name} is currently booked, but can join a waitlist or discuss future start dates.`;
+  }
+
+  if (/(skills|expertise|speciali[sz]e|what can .* do|services)/.test(lower)) {
+    return `${freelancer.name} specializes in ${freelancer.skills.join(', ')}.`;
+  }
+
+  if (/(about|background|experience|bio|who is|tell me more)/.test(lower)) {
+    return `${freelancer.name} is a ${freelancer.role}. ${freelancer.bio}`;
+  }
+
+  if (/(portfolio|work samples|past work)/.test(lower)) {
+    return `You can review ${freelancer.name}'s portfolio at ${freelancer.portfolio}.`;
+  }
+
+  if (/(email|contact|reach)/.test(lower)) {
+    return `You can contact ${freelancer.name} at ${freelancer.email}. If you want, I can also help schedule a call.`;
+  }
+
+  return '';
+}
+
 function parseBudget(text) {
   const normalized = text.replace(/,/g, '');
   const rangeMatch = normalized.match(/\$?\s*(\d{2,6})\s*(?:-|to)\s*\$?\s*(\d{2,6})/i);
@@ -168,6 +214,11 @@ function updateLeadCapture(text) {
 
 function generateLocalReply(text, freelancer) {
   const lower = text.toLowerCase();
+  const freelancerInfoReply = getFreelancerInfoReply(text, freelancer);
+  if (freelancerInfoReply) {
+    return freelancerInfoReply;
+  }
+
   updateLeadCapture(text);
 
   const asksToMeet = /(meeting|call|calendar|book|schedule|discovery)/.test(lower);
