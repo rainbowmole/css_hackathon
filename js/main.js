@@ -1,7 +1,7 @@
 import { freelancers } from './data.js';
 import { showToast } from './toast.js';
 import { configureChat, sendChat } from './chat.js';
-import { bindUIEvents, renderGrid } from './ui.js';
+import { bindUIEvents, renderGrid, setAppMode, switchView } from './ui.js';
 import { bindSettingsEvents, configureSettings, renderSkillChips, renderTriggers } from './settings.js';
 
 function bindChatEvents() {
@@ -21,11 +21,23 @@ function bindToastShortcutEvents() {
   });
 }
 
+function bindIntroEvents() {
+  document.querySelectorAll('[data-open-view]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const mode = button.dataset.appMode || 'customer';
+      setAppMode(mode);
+      switchView(button.dataset.openView);
+    });
+  });
+}
+
 function init() {
   configureChat({ showToast });
   configureSettings({ showToast });
 
+  setAppMode('customer');
   bindUIEvents();
+  bindIntroEvents();
   bindChatEvents();
   bindSettingsEvents();
   bindToastShortcutEvents();

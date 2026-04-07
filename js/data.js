@@ -58,3 +58,20 @@ export const defaultTriggers = [
   { id: 'newchat', checked: false, label: 'Every new chat starts', sub: 'High volume - use with care' },
   { id: 'badfit', checked: true, label: 'Bot redirects a bad-fit lead', sub: 'So you can review the threshold' }
 ];
+
+export const serviceCatalog = [
+  { value: 'brand-identity', label: 'Brand identity', category: 'Design', skill: 'Branding' },
+  { value: 'ui-ux', label: 'UI / UX design', category: 'Design', skill: 'UI Design' },
+  { value: 'web-app', label: 'Web app development', category: 'Development', skill: 'React' },
+  { value: 'mobile-app', label: 'Mobile app development', category: 'Development', skill: 'React Native' },
+  { value: 'content-strategy', label: 'Content strategy', category: 'Writing', skill: 'SEO Copy' },
+  { value: 'growth-marketing', label: 'Growth marketing', category: 'Marketing', skill: 'Growth Strategy' }
+];
+
+export const categorySkillMap = {
+  Design: ['Branding', 'UI Design', 'Figma', 'Logo', 'Illustration', 'User Testing', 'Wireframes'],
+  Development: ['React', 'Node.js', 'PostgreSQL', 'APIs', 'TypeScript', 'React Native', 'Swift', 'Expo'],
+  Writing: ['SEO Copy', 'Blog Writing', 'Email', 'Brand Voice', 'UX Copy'],
+  Marketing: ['Growth Strategy', 'Paid Ads', 'Funnels', 'Analytics', 'CRO'],
+  Photography: ['Portraits', 'Retouching', 'Lighting', 'Editing']
+};

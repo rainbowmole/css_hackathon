@@ -15,19 +15,61 @@
   <nav class="topbar" aria-label="Primary navigation">
     <div class="topbar-logo">FreelanceConnect</div>
     <div class="topbar-tabs" role="tablist" aria-label="Application views">
-      <button class="topbar-tab active" data-view="client" role="tab" aria-selected="true">Find freelancers</button>
-      <button class="topbar-tab" data-view="dashboard" role="tab" aria-selected="false">My dashboard</button>
-      <button class="topbar-tab" data-view="settings" role="tab" aria-selected="false">Profile &amp; settings</button>
+      <button class="topbar-tab" data-view="client" role="tab" aria-selected="false">Profile</button>
+      <button class="topbar-tab" data-view="dashboard" role="tab" aria-selected="false">Dashboard</button>
+      <button class="topbar-tab" data-view="settings" role="tab" aria-selected="false">Settings</button>
     </div>
   </nav>
 
   <main class="main">
 
-    <div class="view active" id="view-client">
+    <div class="view active" id="view-intro">
+      <section class="intro-card" aria-labelledby="intro-title">
+        <p class="intro-eyebrow">AI-Powered Freelance Marketplace</p>
+        <h1 class="intro-title" id="intro-title">FreelanceConnect helps the right people connect faster.</h1>
+        <p class="intro-lead">
+          This page is a guided marketplace prototype where clients can discover talent quickly and freelancers can
+          qualify leads with AI-assisted conversations.
+        </p>
+
+        <div class="intro-columns">
+          <article class="intro-col">
+            <h2>How it helps clients</h2>
+            <p>
+              Browse freelancer profiles, filter by skill and category, and start conversations to check fit,
+              budget, and timeline before committing.
+            </p>
+          </article>
+          <article class="intro-col">
+            <h2>How it helps freelancers</h2>
+            <p>
+              Use smart profile settings and bot triggers to pre-qualify inquiries, reduce low-fit messages,
+              and focus on leads that match your services.
+            </p>
+          </article>
+        </div>
+
+        <div class="intro-cta-row">
+          <button class="btn btn-primary intro-cta" type="button" data-open-view="client" data-app-mode="customer">Continue as Customer</button>
+          <button class="btn intro-cta" type="button" data-open-view="settings" data-app-mode="freelancer">Be a Freelancer</button>
+        </div>
+      </section>
+    </div>
+
+    <div class="view" id="view-client">
 
       <div id="client-list">
         <div class="search-row">
           <input type="text" id="search-input" placeholder="Search by name, skill, or category..." aria-label="Search freelancers">
+          <select id="filter-service" aria-label="Choose a service">
+            <option value="">Any service</option>
+            <option value="brand-identity">Brand identity</option>
+            <option value="ui-ux">UI / UX design</option>
+            <option value="web-app">Web app development</option>
+            <option value="mobile-app">Mobile app development</option>
+            <option value="content-strategy">Content strategy</option>
+            <option value="growth-marketing">Growth marketing</option>
+          </select>
           <select id="filter-cat" aria-label="Filter by category">
             <option value="">All categories</option>
             <option>Design</option>
@@ -35,6 +77,16 @@
             <option>Writing</option>
             <option>Marketing</option>
             <option>Photography</option>
+          </select>
+          <select id="filter-skill" aria-label="Filter by skill">
+            <option value="">Any skill</option>
+          </select>
+          <select id="filter-budget" aria-label="Filter by budget">
+            <option value="">Any budget</option>
+            <option value="500">Up to $500</option>
+            <option value="1000">Up to $1,000</option>
+            <option value="2500">Up to $2,500</option>
+            <option value="5000">Up to $5,000</option>
           </select>
         </div>
         <div class="fl-grid" id="fl-grid"></div>
@@ -205,6 +257,32 @@
         </div>
 
         <div class="settings-section full">
+          <h3>Demographic settings</h3>
+          <div class="settings-meta-grid">
+            <div class="form-group">
+              <label for="set-location">Service location</label>
+              <input type="text" id="set-location" value="Remote, US & Canada">
+            </div>
+            <div class="form-group">
+              <label for="set-timezone">Timezone</label>
+              <input type="text" id="set-timezone" value="UTC-5 / UTC-8">
+            </div>
+            <div class="form-group">
+              <label for="set-audience">Target audience</label>
+              <input type="text" id="set-audience" value="Startups and small businesses">
+            </div>
+            <div class="form-group">
+              <label for="set-industry">Target industry</label>
+              <input type="text" id="set-industry" value="SaaS, e-commerce, creative services">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="set-demographic-notes">Demographic notes</label>
+            <textarea id="set-demographic-notes">I work best with founders and teams who value clear communication, fast feedback, and long-term collaboration.</textarea>
+          </div>
+        </div>
+
+        <div class="settings-section full">
           <h3>Bot notification triggers</h3>
           <p style="font-size:13px;color:var(--text-secondary);margin-bottom:14px;">Notify me when the bot detects any of these conditions in a conversation.</p>
           <div class="trigger-list" id="trigger-list"></div>
@@ -221,6 +299,7 @@
 
 <div class="toast" id="toast"></div>
 
+<script src="js/config.js"></script>
 <script type="module" src="js/main.js"></script>
 </body>
 </html>

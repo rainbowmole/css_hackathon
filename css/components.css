@@ -200,6 +200,39 @@
   30% { transform: translateY(-5px); }
 }
 
+.schedule-card {
+  align-self: flex-start;
+  width: 100%;
+  padding: 14px;
+  background: var(--bg-secondary);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.schedule-card-title {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.schedule-card-sub {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.schedule-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.schedule-slot-btn {
+  min-width: 0;
+}
+
 .chat-input-row {
   display: flex;
   gap: 8px;

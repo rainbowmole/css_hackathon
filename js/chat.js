@@ -1,4 +1,5 @@
 import { state } from './state.js';
+import { buildGoogleCalendarLink, generateGeminiReply, getSuggestedMeetingSlots } from './integrations.js';
 
 let showToast = () => {};
 
@@ -56,6 +57,68 @@ function hideTyping() {
   if (typing) typing.remove();
 }
 
+function appendScheduleCard(freelancer, summaryText) {
+  const msgs = document.getElementById('chat-messages');
+  const card = document.createElement('div');
+  card.className = 'schedule-card';
+
+  const title = document.createElement('div');
+  title.className = 'schedule-card-title';
+  title.textContent = 'Pick a time to schedule the meeting';
+
+  const summary = document.createElement('div');
+  summary.className = 'schedule-card-sub';
+  summary.textContent = summaryText;
+
+  const actions = document.createElement('div');
+  actions.className = 'schedule-card-actions';
+
+  getSuggestedMeetingSlots().forEach((slot) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'btn btn-primary schedule-slot-btn';
+    button.textContent = slot.label;
+    button.addEventListener('click', () => {
+      const link = buildGoogleCalendarLink({
+        title: `Meeting with ${freelancer.name}`,
+        details: `Scheduled via FreelanceConnect for ${freelancer.name}.`,
+        location: 'Google Meet',
+        start: slot.start,
+        end: slot.end
+      });
+
+      window.open(link, '_blank', 'noopener,noreferrer');
+      appendBotMsg(`Invite created for ${slot.label}. I opened the Google Calendar event link.`);
+      showToast('Calendar invite opened in a new tab.');
+    });
+    actions.appendChild(button);
+  });
+
+  card.appendChild(title);
+  card.appendChild(summary);
+  card.appendChild(actions);
+  msgs.appendChild(card);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function generateLocalReply(text, freelancer) {
+  const lower = text.toLowerCase();
+
+  if (/(meeting|call|calendar|book|schedule)/.test(lower)) {
+    return `Great. I can help schedule a meeting with ${freelancer.name}. Pick a time below and I’ll generate a Google Calendar invite.`;
+  }
+
+  if (/(budget|cost|price|rate)/.test(lower)) {
+    return `Projects with ${freelancer.name} typically start around $${freelancer.minBudget}. What budget range are you aiming for?`;
+  }
+
+  if (/(timeline|deadline|when)/.test(lower)) {
+    return `What delivery timeline are you working with? That helps me check if ${freelancer.name} is the right fit.`;
+  }
+
+  return `Tell me a bit more about the project goals, budget, and timeline, and I’ll narrow it down.`;
+}
+
 export async function sendChat() {
   if (state.isBotTyping || !state.currentFreelancer) return;
 
@@ -95,25 +158,18 @@ Rules:
 6. Be warm and human - not robotic or form-like.`;
 
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        system: systemPrompt,
-        messages: state.chatHistory
-      })
-    });
-
-    const data = await response.json();
-    const reply = data?.content?.[0]?.text || 'Something went wrong - please try again.';
+    const geminiReply = await generateGeminiReply({ systemPrompt, messages: state.chatHistory });
+    const reply = geminiReply || generateLocalReply(text, f);
 
     state.chatHistory.push({ role: 'assistant', content: reply });
     hideTyping();
     appendBotMsg(reply);
 
     const normalizedReply = reply.toLowerCase();
+    if (normalizedReply.includes('calendar invite') || normalizedReply.includes('schedule a meeting') || normalizedReply.includes('pick a time')) {
+      appendScheduleCard(f, 'Choose a slot and I will generate the event link for both sides.');
+    }
+
     if (normalizedReply.includes('notify') || normalizedReply.includes('calendar link')) {
       setTimeout(() => showToast('Freelancer notified - meeting request sent!'), 800);
     }

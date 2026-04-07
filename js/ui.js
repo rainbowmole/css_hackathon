@@ -1,4 +1,5 @@
 import { freelancers } from './data.js';
+import { categorySkillMap, serviceCatalog } from './data.js';
 import { state } from './state.js';
 import { setChatFreelancer } from './chat.js';
 
@@ -17,6 +18,21 @@ export function switchView(view) {
     tabEl.classList.add('active');
     tabEl.setAttribute('aria-selected', 'true');
   }
+}
+
+export function setAppMode(mode) {
+  const dashboardTab = document.querySelector('.topbar-tab[data-view="dashboard"]');
+  const settingsTab = document.querySelector('.topbar-tab[data-view="settings"]');
+  const viewDashboard = document.getElementById('view-dashboard');
+  const viewSettings = document.getElementById('view-settings');
+
+  document.body.dataset.appMode = mode;
+
+  const isFreelancerMode = mode === 'freelancer';
+  if (dashboardTab) dashboardTab.hidden = !isFreelancerMode;
+  if (settingsTab) settingsTab.hidden = !isFreelancerMode;
+  if (viewDashboard) viewDashboard.hidden = !isFreelancerMode;
+  if (viewSettings) viewSettings.hidden = !isFreelancerMode;
 }
 
 export function renderGrid(list) {
@@ -45,14 +61,52 @@ export function renderGrid(list) {
     </div>`).join('');
 }
 
+function renderSkillOptions(category, selectedSkill = '') {
+  const skillSelect = document.getElementById('filter-skill');
+  if (!skillSelect) return;
+
+  const options = category ? (categorySkillMap[category] || []) : [];
+  const current = selectedSkill && options.includes(selectedSkill) ? selectedSkill : '';
+
+  skillSelect.innerHTML = ['<option value="">Any skill</option>', ...options.map((skill) => `<option value="${skill}">${skill}</option>`)].join('');
+  skillSelect.value = current;
+}
+
+function applyServicePreset() {
+  const serviceSelect = document.getElementById('filter-service');
+  const categorySelect = document.getElementById('filter-cat');
+  const skillSelect = document.getElementById('filter-skill');
+
+  const selectedService = serviceCatalog.find((service) => service.value === serviceSelect.value);
+  if (!selectedService) {
+    renderSkillOptions(categorySelect.value);
+    filterFreelancers();
+    return;
+  }
+
+  categorySelect.value = selectedService.category;
+  renderSkillOptions(selectedService.category, selectedService.skill);
+  skillSelect.value = selectedService.skill;
+  filterFreelancers();
+}
+
 export function filterFreelancers() {
   const query = document.getElementById('search-input').value.toLowerCase();
+  const service = document.getElementById('filter-service').value;
   const category = document.getElementById('filter-cat').value;
+  const skill = document.getElementById('filter-skill').value;
+  const budget = Number(document.getElementById('filter-budget').value || 0);
+
+  const selectedService = serviceCatalog.find((item) => item.value === service);
+  const effectiveCategory = category || selectedService?.category || '';
+  const effectiveSkill = skill || selectedService?.skill || '';
 
   const result = freelancers.filter((f) => {
     const matchQuery = !query || [f.name, f.role, ...f.skills].some((s) => s.toLowerCase().includes(query));
-    const matchCategory = !category || f.cat === category;
-    return matchQuery && matchCategory;
+    const matchCategory = !effectiveCategory || f.cat === effectiveCategory;
+    const matchSkill = !effectiveSkill || f.skills.some((item) => item === effectiveSkill);
+    const matchBudget = !budget || f.minBudget <= budget;
+    return matchQuery && matchCategory && matchSkill && matchBudget;
   });
 
   renderGrid(result);
@@ -117,6 +171,9 @@ export function showList() {
 export function bindUIEvents() {
   const tabs = document.querySelector('.topbar-tabs');
   const grid = document.getElementById('fl-grid');
+  const serviceSelect = document.getElementById('filter-service');
+  const categorySelect = document.getElementById('filter-cat');
+  const skillSelect = document.getElementById('filter-skill');
 
   tabs.addEventListener('click', (event) => {
     const button = event.target.closest('.topbar-tab');
@@ -125,7 +182,14 @@ export function bindUIEvents() {
   });
 
   document.getElementById('search-input').addEventListener('input', filterFreelancers);
-  document.getElementById('filter-cat').addEventListener('change', filterFreelancers);
+  serviceSelect.addEventListener('change', applyServicePreset);
+  categorySelect.addEventListener('change', () => {
+    serviceSelect.value = '';
+    renderSkillOptions(categorySelect.value);
+    filterFreelancers();
+  });
+  skillSelect.addEventListener('change', filterFreelancers);
+  document.getElementById('filter-budget').addEventListener('change', filterFreelancers);
   document.getElementById('back-to-list').addEventListener('click', showList);
 
   grid.addEventListener('click', (event) => {
@@ -142,4 +206,6 @@ export function bindUIEvents() {
     event.preventDefault();
     openProfile(Number(card.dataset.freelancerId));
   });
+
+  renderSkillOptions(categorySelect.value);
 }
