@@ -2,6 +2,7 @@ import { state } from './state.js';
 import { buildGoogleCalendarLink, generateGeminiReply, getSuggestedMeetingSlots } from './integrations.js';
 
 let showToast = () => {};
+let leadCapture = null;
 
 export function configureChat(options = {}) {
   showToast = options.showToast || showToast;
@@ -20,6 +21,13 @@ export function setChatFreelancer(freelancer) {
   nameEl.textContent = freelancer.name + "'s assistant";
 
   msgsEl.innerHTML = '';
+  leadCapture = {
+    project: '',
+    budget: null,
+    timeline: '',
+    name: '',
+    email: ''
+  };
   appendBotMsg(
     `Hi! I'm ${freelancer.name}'s assistant. ${freelancer.name} is a ${freelancer.role.toLowerCase()} specialising in ${freelancer.skills.slice(0, 2).join(' and ')}. What project can I help you explore today?`
   );
@@ -101,11 +109,95 @@ function appendScheduleCard(freelancer, summaryText) {
   msgs.scrollTop = msgs.scrollHeight;
 }
 
+function parseBudget(text) {
+  const normalized = text.replace(/,/g, '');
+  const rangeMatch = normalized.match(/\$?\s*(\d{2,6})\s*(?:-|to)\s*\$?\s*(\d{2,6})/i);
+  if (rangeMatch) {
+    return Math.max(Number(rangeMatch[1]), Number(rangeMatch[2]));
+  }
+
+  const singleMatch = normalized.match(/\$\s*(\d{2,6})|\b(\d{2,6})\s*(usd|dollars?)\b/i);
+  if (!singleMatch) return null;
+  return Number(singleMatch[1] || singleMatch[2]);
+}
+
+function parseEmail(text) {
+  const match = text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+  return match ? match[0] : '';
+}
+
+function parseName(text) {
+  const intentMatch = text.match(/(?:i am|i'm|my name is)\s+([a-z][a-z\s'-]{1,40})/i);
+  if (!intentMatch) return '';
+  return intentMatch[1]
+    .trim()
+    .split(' ')
+    .slice(0, 3)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(' ');
+}
+
+function inferProjectType(text) {
+  const lower = text.toLowerCase();
+  if (/(logo|brand|identity|figma|ui|ux|design)/.test(lower)) return 'design project';
+  if (/(web|website|app|react|node|api|mobile|ios|android)/.test(lower)) return 'development project';
+  if (/(copy|content|blog|seo|email)/.test(lower)) return 'content project';
+  if (/(ads|growth|marketing|funnel|campaign)/.test(lower)) return 'marketing project';
+  return '';
+}
+
+function updateLeadCapture(text) {
+  if (!leadCapture) {
+    leadCapture = { project: '', budget: null, timeline: '', name: '', email: '' };
+  }
+
+  const budget = parseBudget(text);
+  const email = parseEmail(text);
+  const name = parseName(text);
+  const project = inferProjectType(text);
+
+  if (budget) leadCapture.budget = budget;
+  if (email) leadCapture.email = email;
+  if (name) leadCapture.name = name;
+  if (project && !leadCapture.project) leadCapture.project = project;
+
+  if (!leadCapture.timeline && /(day|week|month|asap|urgent|deadline|launch|timeline)/i.test(text)) {
+    leadCapture.timeline = text.trim();
+  }
+}
+
 function generateLocalReply(text, freelancer) {
   const lower = text.toLowerCase();
+  updateLeadCapture(text);
 
-  if (/(meeting|call|calendar|book|schedule)/.test(lower)) {
-    return `Great. I can help schedule a meeting with ${freelancer.name}. Pick a time below and I’ll generate a Google Calendar invite.`;
+  const asksToMeet = /(meeting|call|calendar|book|schedule|discovery)/.test(lower);
+
+  if (asksToMeet && (!leadCapture.name || !leadCapture.email)) {
+    return 'Happy to set that up. Before I schedule, can you share your name and best email?';
+  }
+
+  if (asksToMeet && leadCapture.name && leadCapture.email) {
+    return `Perfect, ${leadCapture.name}. I have your email as ${leadCapture.email}. Pick a time below and I will prepare the Google Calendar invite for both of you.`;
+  }
+
+  if (leadCapture.budget && leadCapture.budget < freelancer.minBudget) {
+    return `Thanks for sharing. That budget is a bit below ${freelancer.name}'s usual minimum of $${freelancer.minBudget}. If flexible, we can explore a smaller scope, or I can still pass your request to ${freelancer.name}.`;
+  }
+
+  if (!leadCapture.project) {
+    return `Great start. What type of project are you planning so I can check fit with ${freelancer.name}'s expertise?`;
+  }
+
+  if (!leadCapture.budget) {
+    return `Got it. What budget range are you targeting for this ${leadCapture.project}?`;
+  }
+
+  if (!leadCapture.timeline) {
+    return 'Thanks. What timeline are you aiming for? A rough target is enough.';
+  }
+
+  if (!leadCapture.name || !leadCapture.email) {
+    return 'This looks like a strong fit. Share your name and email, and I can line up a discovery call.';
   }
 
   if (/(budget|cost|price|rate)/.test(lower)) {
@@ -116,7 +208,7 @@ function generateLocalReply(text, freelancer) {
     return `What delivery timeline are you working with? That helps me check if ${freelancer.name} is the right fit.`;
   }
 
-  return `Tell me a bit more about the project goals, budget, and timeline, and I’ll narrow it down.`;
+  return `Nice - this sounds like a potential fit for ${freelancer.name}. If you want, I can schedule a discovery call now.`;
 }
 
 export async function sendChat() {
@@ -158,8 +250,17 @@ Rules:
 6. Be warm and human - not robotic or form-like.`;
 
   try {
-    const geminiReply = await generateGeminiReply({ systemPrompt, messages: state.chatHistory });
-    const reply = geminiReply || generateLocalReply(text, f);
+    let reply = '';
+    try {
+      const geminiReply = await generateGeminiReply({ systemPrompt, messages: state.chatHistory });
+      reply = geminiReply || generateLocalReply(text, f);
+      if (!geminiReply) {
+        showToast('Using local assistant reply. Add a working Gemini key for AI responses.');
+      }
+    } catch (geminiError) {
+      reply = generateLocalReply(text, f);
+      showToast('Gemini unavailable or quota exceeded. Using local assistant.');
+    }
 
     state.chatHistory.push({ role: 'assistant', content: reply });
     hideTyping();
