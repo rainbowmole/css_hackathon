@@ -26,7 +26,8 @@ export function setChatFreelancer(freelancer) {
     budget: null,
     timeline: '',
     name: '',
-    email: ''
+    email: '',
+    wantsMeeting: false
   };
   appendBotMsg(
     `Hi! I'm ${freelancer.name}'s assistant. ${freelancer.name} is a ${freelancer.role.toLowerCase()} specialising in ${freelancer.skills.slice(0, 2).join(' and ')}. What project can I help you explore today?`
@@ -224,7 +225,8 @@ function getFreelancerInfoReply(text, freelancer) {
     return `You can review ${freelancer.name}'s portfolio at ${freelancer.portfolio}.`;
   }
 
-  if (/(email|contact|reach)/.test(lower)) {
+  const asksFreelancerContact = /(what(?:'s| is)\s+(?:the\s+)?(?:freelancer|their|his|her)?\s*email|email address|how can i contact|how do i contact|how can i reach|contact info|reach out)/.test(lower);
+  if (asksFreelancerContact) {
     return `You can contact ${freelancer.name} at ${freelancer.email}. If you want, I can also help schedule a call.`;
   }
 
@@ -270,7 +272,7 @@ function inferProjectType(text) {
 
 function updateLeadCapture(text) {
   if (!leadCapture) {
-    leadCapture = { project: '', budget: null, timeline: '', name: '', email: '' };
+    leadCapture = { project: '', budget: null, timeline: '', name: '', email: '', wantsMeeting: false };
   }
 
   const budget = parseBudget(text);
@@ -290,20 +292,27 @@ function updateLeadCapture(text) {
 
 function generateLocalReply(text, freelancer) {
   const lower = text.toLowerCase();
-  const freelancerInfoReply = getFreelancerInfoReply(text, freelancer);
+  const asksToMeet = /(meeting|call|calendar|book|schedule|discovery)/.test(lower);
+  if (asksToMeet) {
+    if (!leadCapture) {
+      leadCapture = { project: '', budget: null, timeline: '', name: '', email: '', wantsMeeting: true };
+    }
+    leadCapture.wantsMeeting = true;
+  }
+
+  const looksLikeContactSubmission = /@|(?:my name is|i am|i'm|name:|email:)/i.test(text);
+  const freelancerInfoReply = looksLikeContactSubmission ? '' : getFreelancerInfoReply(text, freelancer);
   if (freelancerInfoReply) {
     return freelancerInfoReply;
   }
 
   updateLeadCapture(text);
 
-  const asksToMeet = /(meeting|call|calendar|book|schedule|discovery)/.test(lower);
-
-  if (asksToMeet && (!leadCapture.name || !leadCapture.email)) {
+  if (leadCapture.wantsMeeting && (!leadCapture.name || !leadCapture.email)) {
     return 'Happy to set that up. Before I schedule, can you share your name and best email?';
   }
 
-  if (asksToMeet && leadCapture.name && leadCapture.email) {
+  if (leadCapture.wantsMeeting && leadCapture.name && leadCapture.email) {
     return `Perfect, ${leadCapture.name}. I have your email as ${leadCapture.email}. Pick a time below and I will prepare the Google Calendar invite for both of you.`;
   }
 
