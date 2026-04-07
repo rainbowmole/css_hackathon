@@ -89,7 +89,7 @@ function appendScheduleCard(freelancer, summaryText) {
     button.addEventListener('click', () => {
       const link = buildGoogleCalendarLink({
         title: `Meeting with ${freelancer.name}`,
-        details: `Scheduled via FreelanceConnect for ${freelancer.name}.`,
+        details: `Scheduled via TaskR for ${freelancer.name}.`,
         location: 'Google Meet',
         start: slot.start,
         end: slot.end
