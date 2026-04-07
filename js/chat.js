@@ -27,7 +27,8 @@ export function setChatFreelancer(freelancer) {
     timeline: '',
     name: '',
     email: '',
-    wantsMeeting: false
+    wantsMeeting: false,
+    awaitingBudget: false
   };
   appendBotMsg(
     `Hi! I'm ${freelancer.name}'s assistant. ${freelancer.name} is a ${freelancer.role.toLowerCase()} specialising in ${freelancer.skills.slice(0, 2).join(' and ')}. What project can I help you explore today?`
@@ -261,6 +262,39 @@ function parseBudget(text) {
   return Math.max(...values);
 }
 
+function parseBudgetLenient(text) {
+  const normalized = String(text || '').replace(/,/g, '').trim().toLowerCase();
+
+  const shortFormMatch = normalized.match(/\b(\d+(?:\.\d+)?)\s*k\b/i);
+  if (shortFormMatch) {
+    return Math.round(Number(shortFormMatch[1]) * 1000);
+  }
+
+  const plainNumber = normalized.match(/^\$?\s*(\d{3,7}(?:\.\d+)?)\s*(usd|dollars?)?\.?$/i);
+  if (plainNumber) {
+    return Math.round(Number(plainNumber[1]));
+  }
+
+  return null;
+}
+
+function isAffirmative(text) {
+  return /^(yes|yeah|yep|sure|ok|okay|please do|go ahead|sounds good|let'?s do it|lets do it|why not|alright)\b/i.test(String(text || '').trim());
+}
+
+function getLastAssistantMessage() {
+  const history = state.chatHistory || [];
+  for (let i = history.length - 1; i >= 0; i -= 1) {
+    if (history[i].role === 'assistant') return history[i].content || '';
+  }
+  return '';
+}
+
+function hasSchedulingContext() {
+  const lastAssistant = getLastAssistantMessage().toLowerCase();
+  return /(schedule|meeting|discovery call|book a call|pick a time|calendar invite|line up a discovery call)/.test(lastAssistant);
+}
+
 function parseEmail(text) {
   const normalized = text
     .replace(/\(at\)|\sat\s/gi, '@')
@@ -299,15 +333,18 @@ function inferProjectType(text) {
 
 function updateLeadCapture(text) {
   if (!leadCapture) {
-    leadCapture = { project: '', budget: null, timeline: '', name: '', email: '', wantsMeeting: false };
+    leadCapture = { project: '', budget: null, timeline: '', name: '', email: '', wantsMeeting: false, awaitingBudget: false };
   }
 
-  const budget = parseBudget(text);
+  const budget = parseBudget(text) || (leadCapture.awaitingBudget ? parseBudgetLenient(text) : null);
   const email = parseEmail(text);
   const name = parseName(text);
   const project = inferProjectType(text);
 
-  if (budget) leadCapture.budget = budget;
+  if (budget) {
+    leadCapture.budget = budget;
+    leadCapture.awaitingBudget = false;
+  }
   if (email) leadCapture.email = email;
   if (name) leadCapture.name = name;
   if (project && !leadCapture.project) leadCapture.project = project;
@@ -319,10 +356,11 @@ function updateLeadCapture(text) {
 
 function generateLocalReply(text, freelancer) {
   const lower = text.toLowerCase();
-  const asksToMeet = /(meeting|call|calendar|book|schedule|discovery)/.test(lower);
+  const asksToMeet = /(meeting|call|calendar|book|schedule|discovery)/.test(lower)
+    || (isAffirmative(text) && hasSchedulingContext());
   if (asksToMeet) {
     if (!leadCapture) {
-      leadCapture = { project: '', budget: null, timeline: '', name: '', email: '', wantsMeeting: true };
+      leadCapture = { project: '', budget: null, timeline: '', name: '', email: '', wantsMeeting: true, awaitingBudget: false };
     }
     leadCapture.wantsMeeting = true;
   }
@@ -352,6 +390,7 @@ function generateLocalReply(text, freelancer) {
   }
 
   if (!leadCapture.budget) {
+    leadCapture.awaitingBudget = true;
     return `Got it. What budget range are you targeting for this ${leadCapture.project}?`;
   }
 
