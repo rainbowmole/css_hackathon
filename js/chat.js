@@ -114,10 +114,86 @@ function extractHourlyRate(rateText) {
   return match ? Number(match[1]) : null;
 }
 
+function normalizeText(value) {
+  return String(value || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function getSkillFitReply(text, freelancer) {
+  const lower = text.toLowerCase();
+  const asksSkillFit = /(can|do|handle|work with|experience with|expert in|good at|able to)/.test(lower)
+    && /(can\s+.*\s+do|work with|help with|build|design|write|develop|create|handle)/.test(lower);
+
+  if (!asksSkillFit) return '';
+
+  const skipPattern = /(meeting|call|calendar|schedule|book|timeline|budget|price|rate)/;
+  if (skipPattern.test(lower)) return '';
+
+  const aliases = {
+    'ui ux': 'UI Design',
+    'ui/ux': 'UI Design',
+    'logo design': 'Logo',
+    'branding': 'Branding',
+    'website': 'React',
+    'web app': 'React',
+    'mobile app': 'React Native',
+    'ios app': 'iOS',
+    'android app': 'Android',
+    'api integration': 'APIs',
+    'typescript': 'TypeScript',
+    'seo': 'SEO Copy',
+    'blog content': 'Blog Writing',
+    'paid ads': 'Paid Ads'
+  };
+
+  const normalizedInput = normalizeText(text);
+  const skillList = freelancer.skills || [];
+  const normalizedSkills = skillList.map((skill) => ({
+    label: skill,
+    key: normalizeText(skill)
+  }));
+
+  let requested = '';
+  let matchedSkill = normalizedSkills.find((skill) => normalizedInput.includes(skill.key));
+
+  if (matchedSkill) {
+    requested = matchedSkill.label;
+  }
+
+  if (!requested) {
+    const aliasEntry = Object.entries(aliases).find(([alias]) => normalizedInput.includes(normalizeText(alias)));
+    if (aliasEntry) {
+      requested = aliasEntry[1];
+      matchedSkill = normalizedSkills.find((skill) => skill.label === requested || skill.key.includes(normalizeText(requested)));
+    }
+  }
+
+  if (!requested) {
+    const phraseMatch = normalizedInput.match(/(?:can\s+(?:you|he|she|they|the freelancer)?\s*do|work with|help with|handle|build|design|develop|create|write)\s+(.+)$/);
+    requested = phraseMatch ? phraseMatch[1].trim().split(' ').slice(0, 4).join(' ') : '';
+  }
+
+  if (!requested) return '';
+
+  if (matchedSkill) {
+    return `Yes - ${freelancer.name} can help with ${matchedSkill.label}. It's one of their listed skills.`;
+  }
+
+  return `${freelancer.name} does not list "${requested}" as a core skill, but their closest strengths are ${freelancer.skills.slice(0, 3).join(', ')}. I can ask follow-up questions to confirm fit.`;
+}
+
 function getFreelancerInfoReply(text, freelancer) {
   const lower = text.toLowerCase();
   const hourlyRate = extractHourlyRate(freelancer.rate);
   const dailyRate = hourlyRate ? hourlyRate * 8 : null;
+
+  const skillFitReply = getSkillFitReply(text, freelancer);
+  if (skillFitReply) {
+    return skillFitReply;
+  }
 
   if (/(daily rate|per day|day rate)/.test(lower)) {
     if (dailyRate) {
