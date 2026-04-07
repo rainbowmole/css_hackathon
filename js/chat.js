@@ -234,26 +234,53 @@ function getFreelancerInfoReply(text, freelancer) {
 }
 
 function parseBudget(text) {
-  const normalized = text.replace(/,/g, '');
-  const rangeMatch = normalized.match(/\$?\s*(\d{2,6})\s*(?:-|to)\s*\$?\s*(\d{2,6})/i);
+  const normalized = text.replace(/,/g, '').toLowerCase();
+  const rangeMatch = normalized.match(/\$?\s*(\d{2,7}(?:\.\d+)?)\s*(?:-|to)\s*\$?\s*(\d{2,7}(?:\.\d+)?)/i);
   if (rangeMatch) {
     return Math.max(Number(rangeMatch[1]), Number(rangeMatch[2]));
   }
 
-  const singleMatch = normalized.match(/\$\s*(\d{2,6})|\b(\d{2,6})\s*(usd|dollars?)\b/i);
-  if (!singleMatch) return null;
-  return Number(singleMatch[1] || singleMatch[2]);
+  const shortFormMatch = normalized.match(/\b(\d+(?:\.\d+)?)\s*k\b/i);
+  if (shortFormMatch) {
+    return Math.round(Number(shortFormMatch[1]) * 1000);
+  }
+
+  const currencyMatch = normalized.match(/\$\s*(\d{2,7}(?:\.\d+)?)/i);
+  if (currencyMatch) {
+    return Math.round(Number(currencyMatch[1]));
+  }
+
+  const contextualMatch = normalized.match(/\b(\d{3,7})\b/g);
+  if (!contextualMatch) return null;
+
+  const hasBudgetContext = /(budget|price|cost|rate|usd|dollars?|around|about|spend)/i.test(normalized);
+  if (!hasBudgetContext) return null;
+
+  const values = contextualMatch.map((value) => Number(value)).filter((value) => value >= 100);
+  if (!values.length) return null;
+  return Math.max(...values);
 }
 
 function parseEmail(text) {
-  const match = text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+  const normalized = text
+    .replace(/\(at\)|\sat\s/gi, '@')
+    .replace(/\(dot\)|\sdot\s/gi, '.')
+    .replace(/\s+/g, '');
+
+  const match = normalized.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
   return match ? match[0] : '';
 }
 
 function parseName(text) {
-  const intentMatch = text.match(/(?:i am|i'm|my name is)\s+([a-z][a-z\s'-]{1,40})/i);
-  if (!intentMatch) return '';
-  return intentMatch[1]
+  const explicitMatch = text.match(/(?:my name is|i am|i'm|this is|name\s*[:\-])\s*([a-z][a-z\s'-]{1,50})/i);
+  const plainNameMatch = text.trim().match(/^([a-z][a-z'\-]+(?:\s+[a-z][a-z'\-]+){0,2})$/i);
+  const match = explicitMatch || plainNameMatch;
+  if (!match) return '';
+
+  const raw = match[1].trim();
+  if (/(email|gmail|outlook|yahoo|hotmail|@|budget|project|timeline)/i.test(raw)) return '';
+
+  return raw
     .trim()
     .split(' ')
     .slice(0, 3)
