@@ -1,0 +1,49 @@
+.app-shell { display: flex; flex-direction: column; min-height: 100vh; }
+
+.topbar {
+  background: var(--bg-primary);
+  border-bottom: 0.5px solid var(--border);
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 52px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.topbar-logo { font-size: 16px; font-weight: 600; color: var(--teal); letter-spacing: -.3px; }
+.topbar-tabs { display: flex; gap: 0; }
+
+.topbar-tab {
+  padding: 0 16px;
+  height: 52px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color .15s, border-color .15s;
+}
+
+.topbar-tab.active { color: var(--text-primary); border-bottom-color: var(--teal); }
+.topbar-tab:hover:not(.active) { color: var(--text-primary); }
+
+.main { flex: 1; max-width: 960px; margin: 0 auto; padding: 24px 16px; width: 100%; }
+
+.view { display: none; }
+.view.active { display: block; }
+
+.profile-chat-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+@media (max-width: 640px) {
+  .profile-chat-layout { grid-template-columns: 1fr; }
+}

@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FreelanceConnect - Marketplace Prototype</title>
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/views.css">
+</head>
+<body>
+<div class="app-shell">
+
+  <nav class="topbar" aria-label="Primary navigation">
+    <div class="topbar-logo">FreelanceConnect</div>
+    <div class="topbar-tabs" role="tablist" aria-label="Application views">
+      <button class="topbar-tab active" data-view="client" role="tab" aria-selected="true">Find freelancers</button>
+      <button class="topbar-tab" data-view="dashboard" role="tab" aria-selected="false">My dashboard</button>
+      <button class="topbar-tab" data-view="settings" role="tab" aria-selected="false">Profile &amp; settings</button>
+    </div>
+  </nav>
+
+  <main class="main">
+
+    <div class="view active" id="view-client">
+
+      <div id="client-list">
+        <div class="search-row">
+          <input type="text" id="search-input" placeholder="Search by name, skill, or category..." aria-label="Search freelancers">
+          <select id="filter-cat" aria-label="Filter by category">
+            <option value="">All categories</option>
+            <option>Design</option>
+            <option>Development</option>
+            <option>Writing</option>
+            <option>Marketing</option>
+            <option>Photography</option>
+          </select>
+        </div>
+        <div class="fl-grid" id="fl-grid"></div>
+      </div>
+
+      <div id="client-profile" style="display:none;">
+        <button class="back-btn" id="back-to-list">&#8592; Back to freelancers</button>
+        <div class="profile-chat-layout">
+          <div class="profile-card" id="profile-detail"></div>
+          <div class="chat-card">
+            <div class="chat-header">
+              <div class="chat-header-avatar" id="chat-avatar"></div>
+              <div>
+                <div class="chat-header-name" id="chat-name"></div>
+                <div class="chat-header-sub">AI assistant - replies instantly</div>
+              </div>
+              <div class="online-dot"></div>
+            </div>
+            <div class="chat-messages" id="chat-messages"></div>
+            <div class="chat-input-row">
+              <input type="text" id="chat-input" placeholder="Ask about projects, pricing, availability..." aria-label="Chat input">
+              <button class="send-btn" id="send-btn" type="button">Send</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="view" id="view-dashboard">
+      <div class="metrics-grid">
+        <div class="metric-card"><div class="metric-val">3</div><div class="metric-lbl">New leads today</div></div>
+        <div class="metric-card"><div class="metric-val">1</div><div class="metric-lbl">Meeting booked</div></div>
+        <div class="metric-card"><div class="metric-val">8</div><div class="metric-lbl">Chats this week</div></div>
+        <div class="metric-card"><div class="metric-val">2</div><div class="metric-lbl">Proposals sent</div></div>
+      </div>
+
+      <div class="section-title">Notifications</div>
+      <div class="notif-list" id="notif-list">
+
+        <div class="notif-card priority">
+          <div class="notif-card-header">
+            <div class="notif-title">Meeting request - Marco R.</div>
+            <div class="notif-time">2 min ago</div>
+          </div>
+          <div class="notif-body">
+            Client agreed to a discovery call after chatting with your bot. Budget and timeline pre-qualified by the AI.
+          </div>
+          <div class="notif-pills">
+            <span class="pill pill-green">Meeting agreed</span>
+            <span class="pill">Budget: $1,500-$3,000</span>
+            <span class="pill">Timeline: 3 weeks</span>
+            <span class="pill">Brand identity</span>
+          </div>
+          <div class="notif-actions">
+            <button class="btn btn-primary" type="button" data-toast="Calendar link sent to Marco!">Send calendar link</button>
+            <button class="btn" type="button" data-toast="Transcript opened!">View transcript</button>
+            <button class="btn" type="button" data-toast="Proposal template opened!">Draft proposal</button>
+          </div>
+        </div>
+
+        <div class="notif-card">
+          <div class="notif-card-header">
+            <div class="notif-title">New lead - Priya S.</div>
+            <div class="notif-time">1 hr ago</div>
+          </div>
+          <div class="notif-body">
+            Client asked about logo design. Bot is in qualification stage - waiting on budget confirmation.
+          </div>
+          <div class="notif-pills">
+            <span class="pill pill-amber">In progress</span>
+            <span class="pill">Logo design</span>
+            <span class="pill">Startup, pre-launch</span>
+          </div>
+          <div class="notif-actions">
+            <button class="btn" type="button" data-toast="Live chat context opened!">Watch live</button>
+          </div>
+        </div>
+
+        <div class="notif-card">
+          <div class="notif-card-header">
+            <div class="notif-title">Bad-fit redirected - Anonymous</div>
+            <div class="notif-time">3 hrs ago</div>
+          </div>
+          <div class="notif-body">
+            Client budget was $50 for a full website. Bot politely redirected them. No time spent on your end.
+          </div>
+          <div class="notif-pills">
+            <span class="pill">Redirected</span>
+            <span class="pill">Budget: $50</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="view" id="view-settings">
+      <div class="settings-grid">
+
+        <div class="settings-section">
+          <h3>Personal info</h3>
+          <div class="form-group">
+            <label for="set-name">Display name</label>
+            <input type="text" id="set-name" value="Alex Reyes">
+          </div>
+          <div class="form-group">
+            <label for="set-role">Role / title</label>
+            <input type="text" id="set-role" value="Brand & UI Designer">
+          </div>
+          <div class="form-group">
+            <label for="set-email">Email</label>
+            <input type="email" id="set-email" value="alex@reyesdesign.co">
+          </div>
+          <div class="form-group">
+            <label for="set-portfolio">Portfolio URL</label>
+            <input type="text" id="set-portfolio" value="reyesdesign.co">
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3>Pricing & availability</h3>
+          <div class="form-group">
+            <label for="set-rate">Hourly rate (USD)</label>
+            <input type="number" id="set-rate" value="85">
+          </div>
+          <div class="form-group">
+            <label for="set-min-budget">Minimum project budget (USD)</label>
+            <input type="number" id="set-min-budget" value="500">
+          </div>
+          <div class="form-group">
+            <label for="set-avail">Availability status</label>
+            <select id="set-avail">
+              <option>Available now</option>
+              <option>Available in 1 week</option>
+              <option>Available in 2 weeks</option>
+              <option>Fully booked</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="set-cat">Category</label>
+            <select id="set-cat">
+              <option>Design</option>
+              <option>Development</option>
+              <option>Writing</option>
+              <option>Marketing</option>
+              <option>Photography</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="settings-section full">
+          <h3>Bio</h3>
+          <div class="form-group">
+            <label for="set-bio">Shown on your profile card</label>
+            <textarea id="set-bio">I help startups and small businesses build strong visual identities. 5+ years working with founders from seed to Series B. I care about brand clarity - making sure your visual identity does real work in the market.</textarea>
+          </div>
+        </div>
+
+        <div class="settings-section full">
+          <h3>Skills</h3>
+          <div class="skills-box">
+            <div class="skill-chips" id="skill-chips"></div>
+            <div class="add-skill-row">
+              <input type="text" id="new-skill-input" placeholder="Add a skill and press Enter..." aria-label="New skill">
+              <button class="btn" id="add-skill-btn" type="button">Add</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-section full">
+          <h3>Bot notification triggers</h3>
+          <p style="font-size:13px;color:var(--text-secondary);margin-bottom:14px;">Notify me when the bot detects any of these conditions in a conversation.</p>
+          <div class="trigger-list" id="trigger-list"></div>
+        </div>
+
+      </div>
+      <div class="save-section">
+        <button class="save-btn" id="save-profile-btn" type="button">Save profile</button>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
