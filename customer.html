@@ -1,16 +1,29 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TaskR - Marketplace Prototype</title>
+  <title>TaskR - Customer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/base.css">
   <link rel="stylesheet" href="css/layout.css">
   <link rel="stylesheet" href="css/components.css">
   <link rel="stylesheet" href="css/views.css">
 </head>
-<body>
+<body data-start-view="client" data-start-mode="customer">
 <div class="app-shell">
+
+  <nav class="topbar" aria-label="Primary navigation">
+    <div class="topbar-logo">TaskR</div>
+    <div class="topbar-tabs" role="tablist" aria-label="Application views">
+      <button class="topbar-tab" data-view="profile" role="tab" aria-selected="false">Profile</button>
+      <button class="topbar-tab" data-view="dashboard" role="tab" aria-selected="false">Dashboard</button>
+      <button class="topbar-tab" data-view="settings" role="tab" aria-selected="false">Automation</button>
+      <button class="topbar-tab" data-view="client" data-contact-trigger="true" role="tab" aria-selected="false">Contact Us</button>
+    </div>
+  </nav>
 
   <main class="main">
 
@@ -80,23 +93,42 @@
         <div class="fl-grid" id="fl-grid"></div>
       </div>
 
-      <div id="client-profile" style="display:none;">
-        <button class="back-btn" id="back-to-list">&#8592; Back to freelancers</button>
-        <div class="profile-chat-layout">
-          <div class="profile-card" id="profile-detail"></div>
-          <div class="chat-card">
-            <div class="chat-header">
-              <div class="chat-header-avatar" id="chat-avatar"></div>
-              <div>
-                <div class="chat-header-name" id="chat-name"></div>
-                <div class="chat-header-sub">AI assistant - replies instantly</div>
+      <div class="profile-modal" id="client-profile" aria-hidden="true">
+        <div class="profile-modal-backdrop" data-profile-close="true"></div>
+        <div class="profile-modal-card" role="dialog" aria-modal="true" aria-labelledby="profile-panel-title">
+          <button class="back-btn" id="back-to-list" data-profile-close="true">&#8592; Back to freelancers</button>
+          <div class="profile-panel-picker" role="tablist" aria-label="Choose panel to view" data-deck-picker="true">
+            <div class="profile-panel-card is-active" data-panel-target="profile" role="button" tabindex="0" aria-selected="true">
+              <div class="profile-panel-card-head">
+                <span class="profile-panel-card-label">Freelancer Profile</span>
+                <span class="profile-panel-card-sub">Freelancer information</span>
               </div>
-              <div class="online-dot"></div>
+              <div class="profile-panel-card-body">
+                <div class="profile-card" id="profile-detail"></div>
+              </div>
             </div>
-            <div class="chat-messages" id="chat-messages"></div>
-            <div class="chat-input-row">
-              <input type="text" id="chat-input" placeholder="Ask about projects, pricing, availability..." aria-label="Chat input">
-              <button class="send-btn" id="send-btn" type="button">Send</button>
+            <div class="profile-panel-card" data-panel-target="chat" role="button" tabindex="0" aria-selected="false">
+              <div class="profile-panel-card-head">
+                <span class="profile-panel-card-label">Chatbot</span>
+                <span class="profile-panel-card-sub">AI chat system</span>
+              </div>
+              <div class="profile-panel-card-body">
+                <div class="chat-card">
+                  <div class="chat-header">
+                    <div class="chat-header-avatar" id="chat-avatar"></div>
+                    <div>
+                      <div class="chat-header-name" id="chat-name"></div>
+                      <div class="chat-header-sub">AI assistant - replies instantly</div>
+                    </div>
+                    <div class="online-dot"></div>
+                  </div>
+                  <div class="chat-messages" id="chat-messages"></div>
+                  <div class="chat-input-row">
+                    <input type="text" id="chat-input" placeholder="Ask about projects, pricing, availability..." aria-label="Chat input">
+                    <button class="send-btn" id="send-btn" type="button">Send</button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -172,6 +204,16 @@
     </div>
 
     <div class="view" id="view-settings">
+      <div class="settings-grid">
+        <div class="settings-section full">
+          <h3>Bot notification triggers</h3>
+          <p style="font-size:13px;color:var(--text-secondary);margin-bottom:14px;">Notify me when the bot detects any of these conditions in a conversation.</p>
+          <div class="trigger-list" id="trigger-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="view" id="view-profile">
       <div class="settings-grid">
 
         <div class="settings-section">
@@ -270,12 +312,6 @@
           </div>
         </div>
 
-        <div class="settings-section full">
-          <h3>Bot notification triggers</h3>
-          <p style="font-size:13px;color:var(--text-secondary);margin-bottom:14px;">Notify me when the bot detects any of these conditions in a conversation.</p>
-          <div class="trigger-list" id="trigger-list"></div>
-        </div>
-
       </div>
       <div class="save-section">
         <button class="save-btn" id="save-profile-btn" type="button">Save profile</button>
@@ -283,6 +319,19 @@
     </div>
 
   </main>
+</div>
+
+<div class="contact-modal" id="contact-modal" aria-hidden="true">
+  <div class="contact-modal-backdrop" data-contact-close="true"></div>
+  <div class="contact-card" role="dialog" aria-modal="true" aria-labelledby="contact-title">
+    <button class="contact-close" type="button" data-contact-close="true" aria-label="Close contact card">x</button>
+    <p class="contact-eyebrow">Contact Card</p>
+    <h2 id="contact-title">TaskR Support</h2>
+    <p class="contact-sub">Reach our team for account, billing, or hiring assistance.</p>
+    <div class="contact-line"><span>Company</span><strong>TaskR Inc.</strong></div>
+    <div class="contact-line"><span>Email</span><strong>hello@taskr-demo.com</strong></div>
+    <div class="contact-line"><span>Phone</span><strong>+1 (415) 555-0199</strong></div>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>

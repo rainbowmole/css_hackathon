@@ -28,6 +28,41 @@ function bindIntroEvents() {
       setAppMode(mode);
       switchView(button.dataset.openView);
     });
+
+    button.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      event.preventDefault();
+      const mode = button.dataset.appMode || 'customer';
+      setAppMode(mode);
+      switchView(button.dataset.openView);
+    });
+  });
+}
+
+function bindContactCardEvents() {
+  const trigger = document.querySelector('[data-contact-trigger="true"]');
+  const modal = document.getElementById('contact-modal');
+  if (!trigger || !modal) return;
+
+  const closeModal = () => {
+    modal.classList.remove('open');
+    modal.setAttribute('aria-hidden', 'true');
+  };
+
+  trigger.addEventListener('click', (event) => {
+    event.preventDefault();
+    modal.classList.add('open');
+    modal.setAttribute('aria-hidden', 'false');
+  });
+
+  modal.addEventListener('click', (event) => {
+    if (!event.target.closest('[data-contact-close="true"]')) return;
+    closeModal();
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') return;
+    closeModal();
   });
 }
 
@@ -35,8 +70,14 @@ function init() {
   configureChat({ showToast });
   configureSettings({ showToast });
 
-  setAppMode('customer');
+  const startView = document.body.dataset.startView || 'intro';
+  const startMode = document.body.dataset.startMode
+    || (startView === 'settings' || startView === 'dashboard' ? 'freelancer' : 'customer');
+
+  setAppMode(startMode);
+  switchView(startView);
   bindUIEvents();
+  bindContactCardEvents();
   bindIntroEvents();
   bindChatEvents();
   bindSettingsEvents();
