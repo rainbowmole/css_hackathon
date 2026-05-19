@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SkillSync AI - Sign Up</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/base.css">
+  <link rel="stylesheet" href="/static/css/layout.css">
+  <link rel="stylesheet" href="/static/css/components.css">
+  <link rel="stylesheet" href="/static/css/auth.css">
+</head>
+<body>
+<div class="app-shell">
+  <nav class="topbar" aria-label="Primary navigation">
+    <button class="topbar-logo" id="home-btn" aria-label="Back to home">SkillSync AI</button>
+  </nav>
+
+  <main class="main">
+    <div class="auth-container">
+      <div class="auth-card">
+        <h1 class="auth-title">Join SkillSync AI</h1>
+        <p class="auth-subtitle">Create your account to get started</p>
+        
+        <form id="register-form" class="auth-form">
+          {% csrf_token %}
+          
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" required placeholder="your@email.com">
+            <span class="error-message" id="email-error"></span>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="first_name">First Name</label>
+              <input type="text" id="first_name" name="first_name" placeholder="John">
+            </div>
+            <div class="form-group">
+              <label for="last_name">Last Name</label>
+              <input type="text" id="last_name" name="last_name" placeholder="Doe">
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required placeholder="••••••••">
+            <small>At least 8 characters with uppercase, number, and special character</small>
+            <span class="error-message" id="password-error"></span>
+          </div>
+          
+          <div class="form-group">
+            <label for="confirm_password">Confirm Password</label>
+            <input type="password" id="confirm_password" name="confirm_password" required placeholder="••••••••">
+            <span class="error-message" id="confirm_password-error"></span>
+          </div>
+          
+          <div class="form-group">
+            <label for="role">I'm a:</label>
+            <select id="role" name="role" required>
+              <option value="customer">Customer</option>
+              <option value="freelancer">Freelancer</option>
+              <option value="both">Both</option>
+            </select>
+          </div>
+          
+          <span class="error-message" id="form-error"></span>
+          
+          <button type="submit" class="btn btn-primary btn-block">Sign Up</button>
+        </form>
+        
+        <div class="auth-footer">
+          <p>Already have an account? <a href="/login/">Log in</a></p>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+  // Set home button
+  document.getElementById('home-btn').addEventListener('click', () => {
+    window.location.href = '/';
+  });
+
+  // Handle registration form submission
+  document.getElementById('register-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const formData = {
+      email: document.getElementById('email').value,
+      first_name: document.getElementById('first_name').value,
+      last_name: document.getElementById('last_name').value,
+      password: document.getElementById('password').value,
+      confirm_password: document.getElementById('confirm_password').value,
+      role: document.getElementById('role').value,
+    };
+    
+    // Clear previous errors
+    document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
+    
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+    try {
+      const response = await fetch('/api/auth/register/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken,
+        },
+        body: JSON.stringify(formData),
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        // Redirect to appropriate page based on role
+        if (data.user && (data.user.role === 'freelancer' || data.user.current_active_role === 'freelancer')) {
+          window.location.href = '/freelancer.html';
+        } else {
+          window.location.href = '/customer.html';
+        }
+      } else if (data.errors) {
+        // Display field-specific errors
+        Object.keys(data.errors).forEach(field => {
+          const errorEl = document.getElementById(`${field}-error`);
+          if (errorEl) {
+            errorEl.textContent = data.errors[field];
+          }
+        });
+      } else {
+        document.getElementById('form-error').textContent = data.error || 'Registration failed';
+      }
+    } catch (error) {
+      document.getElementById('form-error').textContent = 'An error occurred. Please try again.';
+    }
+  });
+</script>
+</body>
+</html>
